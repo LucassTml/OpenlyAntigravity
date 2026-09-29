@@ -1,0 +1,7 @@
+{
+  "name": "opencode-agy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OpenCode provider that routes model requests through the local Antigravity (agy) CLI",
+  "type": "module"
+}

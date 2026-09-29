@@ -1,0 +1,16 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  "providers": {
+    "agy": {
+      "name": "Antigravity (agy)",
+      "settings": {
+        "permissions": "edit",
+        "addDirs": [],
+        "toolActivity": "reasoning",
+        "system": "wrap",
+        "resume": true
+      }
+    }
+  }
+}
