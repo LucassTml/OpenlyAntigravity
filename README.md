@@ -210,7 +210,7 @@ It should answer `ok`.
 
 With `"debug": true`, the log also keeps the full prompts.
 
-## 8. How it works (for the curious)
+## 8. How it works
 
 1. **`server.js`** is the OpenCode plugin. It runs `agy models`, registers each model as `agy/<id>`, and reports the folder for each session.
 2. **`provider.js`** is the entry point OpenCode loads for the provider. It is minimal and reloads `model.js` and `agy.js` whenever these files change, so plugin updates take effect on the next message without restarting.
