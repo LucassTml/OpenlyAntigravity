@@ -89,7 +89,7 @@ export class AgyLanguageModel {
       prior && lastAssistant >= 0 && newInput && prior.key === historyKey(messages.slice(0, lastAssistant + 1))
         ? prior
         : undefined
-    const prompt = resumed ? newInput : renderTranscript(system, messages, settings.system)
+    const prompt = resumed ? newInput : renderTranscript(system, messages, settings)
     const args = buildAgyArgs(this.modelId, settings, resumed?.conversationId)
 
     const warnings = []
@@ -249,9 +249,40 @@ function splitPrompt(prompt) {
   return { system: system.join("\n\n").trim(), messages }
 }
 
-function renderTranscript(system, messages, systemMode) {
+// agy's permission rules match commands by prefix, so improvised scripts
+// (`powershell -Command ...`, `;` chains, pipes) are denied even when the plain
+// command is allowed. Steer agy to the single commands a user can allow-list.
+const FILE_COMMANDS =
+  process.platform === "win32"
+    ? [
+        "Copy a file (e.g. save a generated image here): Copy-Item -LiteralPath '<source>' -Destination '<target>'",
+        "Move a file: Move-Item -LiteralPath '<source>' -Destination '<target>'",
+        "Rename: Rename-Item -LiteralPath '<path>' -NewName '<name>'",
+        "Create a folder: New-Item -ItemType Directory -Force -Path '<path>'",
+        "List files: Get-ChildItem -LiteralPath '<folder>'",
+        "Download a file (e.g. an image found on the web): Invoke-WebRequest -Uri '<url>' -OutFile '<path>'",
+      ]
+    : [
+        "Copy a file (e.g. save a generated image here): cp '<source>' '<target>'",
+        "Move a file: mv '<source>' '<target>'",
+        "Create a folder: mkdir -p '<path>'",
+        "List files: ls '<folder>'",
+        "Download a file (e.g. an image found on the web): curl -L -o '<path>' '<url>'",
+      ]
+
+const FILE_COMMAND_GUIDE =
+  "<file_command_guide>\n" +
+  "When you need a shell command for files, use exactly one of these forms, one command per call, " +
+  "with no `powershell -Command` wrapper, no `;`/`&&` chaining and no pipes (other forms are denied):\n" +
+  FILE_COMMANDS.map((line) => `- ${line}`).join("\n") +
+  "\nWhen adding images to a Markdown file, store them next to the note (or in a subfolder) and use a " +
+  "relative path like ![description](imagens/foto.png). For web images you may also link the direct image URL.\n" +
+  "</file_command_guide>"
+
+function renderTranscript(system, messages, settings) {
   const blocks = []
-  if (system && systemMode !== "omit")
+  if (settings.fileCommandGuide !== false) blocks.push(FILE_COMMAND_GUIDE)
+  if (system && settings.system !== "omit")
     blocks.push(
       "<opencode_instructions>\n" +
         "Instructions from the OpenCode client that is relaying this conversation. Tool names mentioned " +
