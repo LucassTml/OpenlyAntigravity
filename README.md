@@ -11,6 +11,7 @@ Use **Antigravity CLI (`agy`)** models (Gemini, Claude, GPT-OSS) directly in **O
 | `agy/` | The plugin itself (5 files). This is the folder that goes into OpenCode's configuration. |
 | `install.ps1` | Installer for **Windows** |
 | `install.sh` | Installer for **macOS / Linux** |
+| `enable-image-permissions.ps1` | Optional (Windows): lets agy generate images, download web images and move files — see [Images](#images-generate-download-and-organize-windows) |
 | `opencode.example.json` | Example of the configuration used by the plugin |
 | `README.md` | This tutorial |
 
@@ -41,6 +42,11 @@ Use **Antigravity CLI (`agy`)** models (Gemini, Claude, GPT-OSS) directly in **O
    powershell -ExecutionPolicy Bypass -File .\install.ps1
    ```
 4. **Close and reopen OpenCode.** If you already had a previous version of this plugin, also run `opencode service restart` once.
+5. *(Optional)* To let agy generate images, find images on the web and move files, also run:
+   ```
+   powershell -ExecutionPolicy Bypass -File .\enable-image-permissions.ps1
+   ```
+   See [Images](#images-generate-download-and-organize-windows) for what it allows.
 
 The installer checks the prerequisites, copies the plugin, and adds the configuration to your `opencode.json`. If `opencode.json` already existed, it creates a backup first (`opencode.json.bak-agy`).
 
@@ -129,7 +135,7 @@ Complete and **valid** example for Windows. Replace `YourName` with your user fo
 Rules that work:
 - `write_file(folder)` allows writing **and** reading everything inside the folder, including subfolders.
 - `read_file(folder)` allows read-only access.
-- `command(start of command)` allows commands that start this way (e.g., `command(git status)`).
+- `command(command)` allows **only that exact command**, with no arguments (e.g., `command(git status)`). To accept arguments, use a regex (see the Images section below).
 - `mcp(server/tool)` and `read_url(domain)` are also accepted.
 
 On Windows, write paths using `/` (e.g., `C:/Users/...`). This format has been tested. Names like `"ReadFile"` or `"WriteToFile"` **do not work**.
@@ -139,6 +145,37 @@ On Windows, write paths using `/` (e.g., `C:/Users/...`). This format has been t
 > ⚠️ **Be careful with JSON.** A missing or extra comma (for example `],` right before a `}`) makes agy **ignore the entire file silently**, including your default model and all permissions. After editing, check it with a validator (e.g., jsonlint.com) or look for the word `malformed` in the `cli.log` file, located in the same folder.
 
 > ⚠️ **`"skip"`** lets agy run **any** command on your PC without asking, including deleting files. Use only if you know what you are doing.
+
+### Images: generate, download and organize (Windows)
+
+To let agy **generate images**, **find and download images from the web** and **copy, move or rename files** (for example, to put images into a `.md` note), it needs extra rules in **agy's own** `settings.json`. That file belongs to each computer, so installing the plugin is not enough: run this once on every PC, in the repository folder:
+
+```
+powershell -ExecutionPolicy Bypass -File .\enable-image-permissions.ps1
+```
+
+The script backs up the file first, uses your own user folders, and does not duplicate rules if you run it again. If you prefer to do it by hand, add these rules to the `"allow"` list in agy's `settings.json`, replacing `YourName`:
+
+```json
+"write_file(C:/Users/YourName/Documents)",
+"read_file(C:/Users/YourName/.gemini/antigravity-cli/brain)",
+"read_url(*)",
+"command(regex:^Copy-Item( [^;|&`$(){}<>]*)?$)",
+"command(regex:^Move-Item( [^;|&`$(){}<>]*)?$)",
+"command(regex:^Rename-Item( [^;|&`$(){}<>]*)?$)",
+"command(regex:^New-Item -ItemType Directory( [^;|&`$(){}<>]*)?$)",
+"command(regex:^Get-ChildItem( [^;|&`$(){}<>]*)?$)",
+"command(regex:^Invoke-WebRequest( [^;|&`$(){}<>]*)?$)"
+```
+
+What each rule allows:
+- The `brain` folder is where agy stores images it generates, before copying them to your folder.
+- `read_url(*)` lets it read web pages.
+- The `command(regex:...)` rules allow **only** copying, moving, renaming, creating folders, listing and downloading files. The `[^;|&...]` part blocks chaining other commands (e.g. `Copy-Item a b; Remove-Item ...` is denied). **Deleting files and any other command stay blocked.**
+
+The plugin already tells agy to use exactly these simple commands. Then just ask, for example: *"generate an image of a circuit and add it to this note"* or *"find an image of a transistor online, download it into an images folder and add it to the .md"*.
+
+> Note: `Invoke-WebRequest` downloads files from the internet, and `read_url(*)` lets agy read any website. Web pages can contain malicious instructions aimed at AIs, so review what it did when you ask for things from the web.
 
 ## 5. All options
 
