@@ -5,37 +5,11 @@
  * Auto-loaded from ~/.config/opencode/plugins/agy/. Settings live in
  * opencode.json under providers.agy.settings; see provider.js for the list.
  */
-import {
-  HEADER_DIRECTORY,
-  HEADER_KIND,
-  HEADER_SESSION,
-  PROVIDER_ID,
-  listAgyModels,
-  log,
-  readModelCache,
-  readRetiredModels,
-  rememberRetiredModels,
-  writeModelCache,
-} from "./agy.js"
+import { HEADER_DIRECTORY, HEADER_KIND, HEADER_SESSION, PROVIDER_ID, listAgyModels, log, readModelCache, writeModelCache } from "./agy.js"
 
 // OpenCode imports this file and calls its `createAgy` export (the dynamic AI SDK loader).
 const PACKAGE = "aisdk:" + new URL("./provider.js", import.meta.url).href
 const DEFAULT_NAME = "Antigravity (agy)"
-
-// Models agy dropped before this plugin tracked removals (agy 1.2.x → 1.4.x).
-// Newer removals are recorded automatically in agy-retired-models.json.
-const KNOWN_RETIRED = [
-  ["gemini-3.1-pro-high", "Gemini 3.1 Pro (High)"],
-  ["gemini-3.1-pro-low", "Gemini 3.1 Pro (Low)"],
-  ["gemini-3.7-flash-high", "Gemini 3.7 Flash (High)"],
-  ["gemini-3.7-flash-medium", "Gemini 3.7 Flash (Medium)"],
-  ["gemini-3.7-flash-low", "Gemini 3.7 Flash (Low)"],
-  ["gemini-3.6-flash-high", "Gemini 3.6 Flash (High)"],
-  ["gemini-3.6-flash-medium", "Gemini 3.6 Flash (Medium)"],
-  ["gemini-3.6-flash-low", "Gemini 3.6 Flash (Low)"],
-  ["claude-sonnet-4-6", "Claude Sonnet 4.6 (Thinking)"],
-  ["claude-opus-4-6-thinking", "Claude Opus 4.6 (Thinking)"],
-].map(([id, name]) => ({ id, name }))
 
 // agy does not report context sizes; these are overridable per model in opencode.json.
 const LIMITS = {
@@ -55,17 +29,8 @@ export default {
       await ctx.provider.transform((editor) => {
         const existing = editor.get(PROVIDER_ID)
         settings = { ...existing?.provider.settings }
-        const current = models ?? []
-        const known = new Set(current.map((model) => model.id))
-        // Old model IDs keep working (e.g. in existing sessions) by running on their successor.
-        const aliases = new Map()
-        for (const old of [...KNOWN_RETIRED, ...readRetiredModels()]) {
-          if (known.has(old.id) || aliases.has(old.id)) continue
-          const successor = successorFor(old.id, current)
-          if (successor) aliases.set(old.id, aliasInfo(old, successor))
-        }
-        const discovered = [...current.map(toModelInfo), ...aliases.values()]
-        for (const id of aliases.keys()) known.add(id)
+        const discovered = (models ?? []).map(toModelInfo)
+        const known = new Set(discovered.map((model) => model.id))
         // Keep models declared only in opencode.json (e.g. one agy added after the last refresh).
         const extra = [...(existing?.models.values() ?? [])]
           .filter((model) => !known.has(model.id))
@@ -151,7 +116,6 @@ function sharedModelList(agyPath) {
     state.at = Date.now()
     state.promise = listAgyModels({ agyPath }).then((models) => {
       if (!models.length) throw new Error("`agy models` returned no models")
-      rememberRetiredModels(readModelCache() ?? [], models)
       writeModelCache(models)
       log("info", "agy models refreshed", { count: models.length })
       return models
@@ -178,36 +142,6 @@ function toModelInfo({ id, name }) {
     status: "active",
     enabled: true,
     limit: LIMITS[family] ?? { context: 128_000, output: 32_000 },
-  }
-}
-
-/** Product line of a model ID: gemini-pro (Pro/Argon), gemini-flash, claude-opus, … */
-function modelLine(id) {
-  if (id.startsWith("gemini")) return /flash/.test(id) ? "gemini-flash" : "gemini-pro"
-  for (const line of ["claude-opus", "claude-sonnet", "claude-haiku", "gpt-oss"]) if (id.startsWith(line)) return line
-  return id.split("-")[0]
-}
-
-function effortOf(id) {
-  return /-(low|medium|high)$/.exec(id)?.[1] ?? (/thinking/.test(id) ? "high" : "medium")
-}
-
-/** Newest current model of the same line, same effort when available (agy lists newest first). */
-function successorFor(oldId, current) {
-  const sameLine = current.filter((model) => modelLine(model.id) === modelLine(oldId))
-  const vendor = current.filter((model) => model.id.split("-")[0] === oldId.split("-")[0])
-  const pool = sameLine.length ? sameLine : vendor
-  const effort = effortOf(oldId)
-  return pool.find((model) => effortOf(model.id) === effort) ?? pool.find((model) => effortOf(model.id) === "medium") ?? pool[0]
-}
-
-function aliasInfo(old, successor) {
-  return {
-    ...toModelInfo(successor),
-    id: old.id,
-    modelID: successor.id,
-    name: `${old.name} → ${successor.name}`,
-    status: "deprecated",
   }
 }
 
