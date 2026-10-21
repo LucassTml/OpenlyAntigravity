@@ -29,7 +29,7 @@ Use **Antigravity CLI (`agy`)** models (Gemini, Claude, GPT-OSS) directly in **O
    ```
    agy models
    ```
-   If a list of models appears (`gemini-3.1-pro-high`, `claude-sonnet-4-6`, etc.), you are good to go.
+   If a list of models appears (`gemini-4-argon-high`, `claude-sonnet-5-5-medium`, etc.), you are good to go.
 
 ## 2. Installation
 
@@ -74,15 +74,15 @@ Then close and reopen OpenCode.
 - **In OpenCode:** type `/models`, look for the **Antigravity (agy)** group, and choose a model.
 - **Via command line:**
   ```
-  opencode run -m agy/gemini-3.1-pro-high "your question here"
+  opencode run -m agy/gemini-4-argon-high "your question here"
   ```
 - **Set as default model:** add this line at the beginning of `opencode.json`:
   ```json
-  "model": "agy/gemini-3.1-pro-high",
+  "model": "agy/gemini-4-argon-high",
   ```
 - **Obsidian:** Obsidian extensions that use OpenCode work the same way. The vault folder is the session folder, so agy can read and edit notes in the vault.
 
-The model list comes from `agy` itself and updates automatically when OpenCode opens. If agy gets a new model, it will appear here.
+The model list comes from `agy` itself and updates automatically when OpenCode opens. If agy gets a new model, it will appear here. When agy removes a model, its old ID keeps working (shown as e.g. "Gemini 3.1 Pro (High) → Gemini 4 Argon (High)") and runs on the newest model of the same line, so existing sessions do not break.
 
 > ⏱️ Each response takes about 5 to 10 seconds to start, because `agy` is launched for every message. Claude models via agy may take up to 30 seconds.
 
@@ -202,7 +202,7 @@ You can also adjust a specific model, for example its context size:
   "agy": {
     "settings": { "permissions": "edit" },
     "models": {
-      "gemini-3.1-pro-high": { "limit": { "context": 500000 } }
+      "gemini-4-argon-high": { "limit": { "context": 500000 } }
     }
   }
 }
