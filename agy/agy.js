@@ -175,6 +175,32 @@ export function readModelCache() {
   }
 }
 
+// Models agy used to offer. Kept so sessions still pinned to them can be
+// redirected to a current successor instead of failing.
+export const RETIRED_MODELS_FILE = path.join(cacheDir, "opencode", "agy-retired-models.json")
+
+export function readRetiredModels() {
+  try {
+    const data = JSON.parse(readFileSync(RETIRED_MODELS_FILE, "utf8"))
+    return Array.isArray(data.models) ? data.models : []
+  } catch {
+    return []
+  }
+}
+
+export function rememberRetiredModels(previous, current) {
+  const offered = new Set(current.map((model) => model.id))
+  const retired = new Map(readRetiredModels().map((model) => [model.id, model]))
+  for (const model of previous) if (!offered.has(model.id)) retired.set(model.id, model)
+  for (const id of offered) retired.delete(id) // a model that came back is not retired
+  try {
+    mkdirSync(path.dirname(RETIRED_MODELS_FILE), { recursive: true })
+    writeFileSync(RETIRED_MODELS_FILE, JSON.stringify({ updated: new Date().toISOString(), models: [...retired.values()] }, null, 2))
+  } catch (error) {
+    log("warn", "could not write retired model list", { error: String(error) })
+  }
+}
+
 export function writeModelCache(models) {
   try {
     mkdirSync(path.dirname(MODEL_CACHE_FILE), { recursive: true })
