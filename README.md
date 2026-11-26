@@ -1,8 +1,8 @@
 # Antigravity (agy) Plugin for OpenCode
 
-Use **Antigravity CLI (`agy`)** models (Gemini, Claude, GPT-OSS) directly in **OpenCode**'s model selector, using the login you already have in `agy`. **No API key is required.**
+Use **Antigravity CLI (`agy`)** models (Gemini 4 Neon, Hydrogen, Carbon and Argon, Gemini 3.8 Flash, Claude 5.5, GPT-OSS) directly in **OpenCode**'s model selector, using the login you already have in `agy`. **No API key is required.**
 
-> Tested with **OpenCode 2.0.19** and **agy 1.2.13** on Windows 11.
+> Tested with **OpenCode 2.0.19** and **agy 1.5.17** on Windows 11.
 
 ## What's in this folder
 
@@ -82,9 +82,25 @@ Then close and reopen OpenCode.
   ```
 - **Obsidian:** Obsidian extensions that use OpenCode work the same way. The vault folder is the session folder, so agy can read and edit notes in the vault.
 
-The model list comes from `agy` itself and updates automatically when OpenCode opens. If agy gets a new model, it will appear here.
+The model list comes from `agy` itself and updates automatically when OpenCode opens. If agy adds or removes a model, the picker follows.
 
-> ⏱️ Each response takes about 5 to 10 seconds to start, because `agy` is launched for every message. Claude models via agy may take up to 30 seconds.
+Models available with agy 1.5.17 (at least one of each family tested through OpenCode):
+
+| Family | Model IDs |
+|---|---|
+| Gemini 4 Neon | `gemini-4-neon-low` · `-medium` · `-high` · `-xhigh` |
+| Gemini 4 Hydrogen | `gemini-4-hydrogen-low` · `-medium` · `-high` · `-xhigh` |
+| Gemini 4 Carbon | `gemini-4-carbon-low` · `-medium` · `-high` |
+| Gemini 4 Argon | `gemini-4-argon-low` · `-medium` · `-high` |
+| Orchestrator | `gemini-pro-orchestrator` (Carbon) · `gemini-pro-orchestrator-neon` · `gemini-pro-orchestrator-argon` |
+| Gemini 3.8 Flash | `gemini-3.8-flash-low` · `-medium` · `-high` |
+| Claude Opus 5.5 | `claude-opus-5-5-low` · `-medium` · `-high` |
+| Claude Sonnet 5.5 | `claude-sonnet-5-5-low` · `-medium` · `-high` |
+| GPT-OSS | `gpt-oss-120b-medium` |
+
+In OpenCode they appear as `agy/<model-id>`, e.g. `agy/gemini-4-neon-high`. If a session was set to a model agy no longer offers, just pick a new one in `/models`.
+
+> ⏱️ Each response takes about 5 to 10 seconds to start, because `agy` is launched for every message.
 
 ## 4. Permissions (what agy can do on your PC)
 
@@ -117,7 +133,7 @@ Complete and **valid** example for Windows. Replace `YourName` with your user fo
 
 ```json
 {
-  "model": "Gemini 3.1 Pro (High)",
+  "model": "Gemini 4 Argon (High)",
   "permissions": {
     "allow": [
       "write_file(C:/Users/YourName/Documents)",
